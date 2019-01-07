@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Lobby Page</title>
+
+	<script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+
+	<script type="text/javascript">
+
+	var userrooms = [];
+	
+		$(document).ready(function(){
+			$.getJSON('/room', function(data){
+				userrooms = data;
+				$.each(data, function(index, item){
+					$('<button></button>').attr({
+						'data-room': userrooms.indexOf(item)
+					}).text('Room Name: '+ item.roomname).appendTo('#container');
+				console.log(userrooms.indexOf(item))
+				});
+			});
+			
+			
+			var socket = io.connect();
+			socket.on('onCreateRoom', function (data){
+				console.log(data);
+				userrooms.push(data);
+				//userrooms.push(data);
+				$('<button></button>').attr({
+					'data-room': userrooms.indexOf(data),
+					'id': data.roomname+'btn'
+				}).text('Room Name: '+data.roomname).appendTo('#container');
+				
+/* 				$('<form id="'+data.roomname+'" action="/canvas/'+data.roomname+'" method="POST"></form> ').appendTo('#'+data.roomname+'btn')
+				
+				$('<input type="hidden" name="pwd" id="'+data.roomname+'hid" value="'+data.roompass+'"/>').appendTo('#'+data.roomname+'form');
+				
+				
+				console.log(userrooms.indexOf(data)); */
+
+			});
+			
+			var check = 0;
+			
+			
+			$('#container').on('click','button', function(){
+				var room = $(this).attr('data-room');
+				var num = Number(room);
+				
+				
+				var inputPass = prompt('비밀번호를 입력하세요');
+				if(userrooms[num].roompass == inputPass){
+					//$('#userrooms[num].roomname').submit();
+					location = '/canvas/'+userrooms[num].roomname;
+				}else if(inputPass == null){
+					return;
+
+				}else{
+					alert('비밀번호가 일치하지 않습니다!')
+				}
+			});
+			
+			$('#createRoom').click(function(){
+				var roomName = $('#roomName').val();
+				var roomPass = $('#roomPass').val();
+				
+				if(roomPass == '' || roomName == ''){
+					alert('공백입력 불가!');
+					return;
+				}else{
+					
+				var userroom = {
+						userid: 'test',
+						roomname: roomName,
+						roompass: roomPass,
+						roommaxp: 10,
+						roomcurp: 0
+				};
+				
+				
+				
+				socket.emit('onCreateRoom', userroom);
+				
+				}
+				
+				
+				//location = '/canvas/'+roomName;
+			});
+			
+			$('#refresh').click(function(){
+				
+				$('#container').empty();
+				
+				$.getJSON('/room', function(data){
+					$.each(data, function(index, item){
+						
+						$('<button></button>').attr({
+							'data-room': JSON.stringify(item)
+						}).text('Room Name: '+ item.roomname).appendTo('#container');
+							
+					});
+				});
+			});
+			
+		});
+	</script>
+
+</head>
+<body>
+
+
+	<h1>Real Time Canvas</h1>
+	<p>Connect Web Server With Socket.io</p>
+	
+	<span>Room Name: </span>
+	<!-- <input id="room"> -->
+	<input id="roomName">
+	<span>Room Password: </span>
+	<input type="password" id="roomPass">
+	
+	<button id="createRoom">Create Room</button>
+	<button id="refresh">Refresh</button>
+	
+	<hr>
+	
+	<div id="container"></div>
+	
+	
+</body>
+</html>
